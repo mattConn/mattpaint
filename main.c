@@ -14,7 +14,7 @@ int main(void) {
     SDL_Init(SDL_INIT_VIDEO);
     SDL_CreateWindowAndRenderer(WINDOW_WIDTH, WINDOW_WIDTH, 0, &window, &renderer);
 	SDL_SetWindowTitle(window, "mattpaint");
-    SDL_SetRenderDrawColor(renderer, 0, 0, 0, 0);
+    SDL_SetRenderDrawColor(renderer, 255, 255, 255, 0);
     SDL_RenderClear(renderer);
     SDL_SetRenderDrawColor(renderer, 255, 0, 0, 255);
 
@@ -22,21 +22,24 @@ int main(void) {
 	r.w = 3;
 	r.h = 3;
 
+	SDL_Point p[1024];
+	int top = -1;
+
 	int x,y;
 
 	Uint8 *keystate;
 
 	bool running = true;
 	bool clear = false;
+	bool eraser = true;
     while (running)
 	{
-    	SDL_SetRenderDrawColor(renderer, 0, 0, 0, 0);
+    	SDL_SetRenderDrawColor(renderer, 255, 255, 255, 0); // canvas
 		if(clear)
 		{
 			SDL_RenderClear(renderer);
 			clear = false;
 		}
-    	SDL_SetRenderDrawColor(renderer, 255, 255, 0, 255);
 
 		if(SDL_PollEvent(&event) )
 		{
@@ -46,6 +49,10 @@ int main(void) {
 			// clear canvas
 			if(keystate[SDL_SCANCODE_BACKSPACE])
 				clear = true;
+
+			// eraser
+			if(keystate[SDL_SCANCODE_E])
+				eraser = eraser ? false : true;
 
 			// brush size
 			// ==========
@@ -73,16 +80,28 @@ int main(void) {
 		}
 
 		keystate = SDL_GetKeyboardState(NULL);
+    	SDL_SetRenderDrawColor(renderer, 0, 0, 0, 0);
 
-		SDL_Rect r1,r2;
+		if(eraser)
+    		SDL_SetRenderDrawColor(renderer, 255, 255, 255, 0);
+		else
+    		SDL_SetRenderDrawColor(renderer, 0, 0, 0, 0);
 
-		if(SDL_BUTTON(SDL_BUTTON_LEFT) && SDL_GetMouseState(&x,&y))
+		if(top < 1024 && SDL_BUTTON(SDL_BUTTON_LEFT) && SDL_GetMouseState(&x,&y))
 		{
-			r.x = x;
-			r.y = y;
-			SDL_RenderFillRect(renderer,&r);
-		}
+			top++;
+			p[top].x = x;
+			p[top].y = y;
+			for(int i=0; i <= top; i++)
+			{
+				if(i+1 < top)
+					SDL_RenderDrawLine(renderer, p[i].x, p[i].y, p[i+1].x, p[i+1].y);
+			}
 
+			if(top >= 1024) top = -1;
+		}
+		else
+			top = -1;
 
 		SDL_RenderPresent(renderer);
 
